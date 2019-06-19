@@ -18,6 +18,12 @@
 
 ``` > npm run prod``` 
 
+##### 5. Update Configuration
+
+``` Rename config_sample.ts file to config.ts ```
+
+``` update configuration information to suite your local mysql configuration ``` 
+    
 
 ####  How to use
 
