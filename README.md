@@ -1,1 +1,1 @@
-# OpenMRS and Lamis Synchronization/Integration
+# DHIS User Creater
