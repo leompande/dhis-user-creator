@@ -13,6 +13,10 @@ export class App {
     }
 
     private config(): void {
+        const proxyPath = '/v2';
+        const proxy = require('path-prefix-proxy')(proxyPath);
+        this.app.use(proxyPath, proxy);
+        this.app.use(proxy.denyUnproxied);
         // support application/json type post data
         this.app.use(bodyParser.json());
         //support application/x-www-form-urlencoded post data

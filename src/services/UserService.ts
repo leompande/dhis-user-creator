@@ -1,9 +1,8 @@
 import {OpenConnection} from "../config";
-import Axios from 'axios-observable';
 import {HttpService} from "./HttpService";
 import {forkJoin, Observable} from "rxjs";
 
-const {generateCode, generateCodes} = require('dhis2-uid');
+const {generateCode} = require('dhis2-uid');
 
 export class UserService {
     connection: any;
