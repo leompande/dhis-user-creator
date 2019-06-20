@@ -1,9 +1,13 @@
-import axios from 'axios';
 import {OpenConnection} from "../config";
+import Axios from 'axios-observable';
+import {HttpService} from "./HttpService";
+import {forkJoin, Observable} from "rxjs";
+
 const {generateCode, generateCodes} = require('dhis2-uid');
 
 export class UserService {
     connection: any;
+    httpService: HttpService = new HttpService();
 
     constructor() {
         if (!this.connection) {
@@ -15,7 +19,7 @@ export class UserService {
         this.connection.query(sql, callBack);
     }
 
-    private prepareUserName(firstname,surname){
+    private prepareUserName(firstname, surname) {
         return `ussd_${firstname.toLowerCase()}${surname.toLowerCase()}`;
     }
 
@@ -31,7 +35,7 @@ export class UserService {
                 },
                 "cogsDimensionConstraints": [],
                 "catDimensionConstraints": [],
-                "username": this.prepareUserName(queryRow['firstname'],queryRow['surname']),
+                "username": this.prepareUserName(queryRow['firstname'], queryRow['surname']),
                 "password": "Dhis@2019",
                 "userRoles": [
                     {
@@ -63,49 +67,121 @@ export class UserService {
 
     private queryUsers(userIds, onFinishCallBack) {
         const query = `SELECT * FROM new_reg WHERE regNo IN (${userIds})`;
-        this.query(query, (error,results) => {
+        this.query(query, (error, results) => {
             onFinishCallBack(results);
         });
     }
 
-    private sendSingleUser(user, credentials, onFinishCallBack) {
-        axios.post('http://41.217.202.50/dhis/api/users', user,
-            {
-                auth: credentials
-            })
-            .then((res) => {
-                onFinishCallBack(res);
-            })
-            .catch((error) => {
-                onFinishCallBack(error);
-            })
+    private retrieveDHISUser(userIds, credentials): Observable<any> {
+        let requestArrays: any[] = [];
+
+        userIds.forEach((userId) => {
+            requestArrays = [
+                ...requestArrays,
+                this.httpService.get(`http://41.217.202.50/dhis/api/users/${userId}`,
+                    {
+                        auth: credentials
+                    })
+            ]
+        });
+        return forkJoin(requestArrays);
+
+    }
+
+    private sendDHISUser(users, credentials): Observable<any> {
+        let requestArrays: any[] = [];
+        users.forEach((user) => {
+            requestArrays = [
+                ...requestArrays,
+                this.httpService.post('http://41.217.202.50/dhis/api/users', user,
+                    {
+                        auth: credentials
+                    })
+            ]
+        });
+        return forkJoin(requestArrays);
+    }
+
+    private updateDHISUser(users, credentials): Observable<any> {
+        let requestArrays: any[] = [];
+        users.forEach((user) => {
+            requestArrays = [
+                ...requestArrays,
+                this.httpService.put(`http://41.217.202.50/dhis/api/users/${user.id}`, user,
+                    {
+                        auth: credentials
+                    })
+            ]
+        });
+        return forkJoin(requestArrays);
+    }
+
+    private deleteDHISUser(users, credentials): Observable<any> {
+        let requestArrays: any[] = [];
+        users.forEach((userid) => {
+            requestArrays = [
+                ...requestArrays,
+                this.httpService.delete(`http://41.217.202.50/dhis/api/users/${userid}`,
+                    {
+                        auth: credentials
+                    })
+            ]
+        });
+        return forkJoin(requestArrays);
+    }
+
+
+    retrieveUsers(users: any[], credentials, onFinishCallBack) {
+        let userIds = [];
+        users.forEach((userId) => {
+            userIds = [
+                ...userIds,
+                userId
+            ];
+        });
+        this.retrieveDHISUser(userIds, credentials).subscribe((response) => {
+            onFinishCallBack(response);
+        }, (error) => {
+            onFinishCallBack(error);
+        });
+
     }
 
     sendUsers(idArrays: number[], credentials, onFinishCallBack) {
-        let counts = 0;
         this.queryUsers(idArrays, (users) => {
-            users.forEach((user)=>{
-                counts++;
-               const userDhis = this.prepareUser(user);
-               let responses = [];
-                this.sendSingleUser(userDhis, credentials, (response) => {
-                    console.log(response);
-                    counts++;
-                    responses = [
-                        ...responses,
-                        response
-                    ];
-                    if (idArrays.length === counts) {
-                        onFinishCallBack(responses);
-                    }
-
-                });
-
-
+            let dhisUsers: any[] = [];
+            users.forEach((user) => {
+                dhisUsers = [
+                    ...dhisUsers,
+                    this.prepareUser(user)
+                ];
             });
-
-
+            this.sendDHISUser(dhisUsers, credentials).subscribe((response)=>{
+                onFinishCallBack(response);
+            },(error)=>{
+                onFinishCallBack(error);
+            });
         });
+
+    }
+
+    updateUsers(users: any[], credentials, onFinishCallBack) {
+        let dhisUsers: any[] = [];
+        users.forEach((user) => {
+            dhisUsers = [
+                ...dhisUsers,
+                this.prepareUser(user)
+            ];
+        });
+        this.updateDHISUser(dhisUsers, credentials).subscribe((response)=>{
+            onFinishCallBack(response);
+        },(error)=>{
+            onFinishCallBack(error);
+        });
+    }
+
+    deleteUsers(users: any[], credentials, onFinishCallBack) {
+        this.deleteDHISUser(users, credentials);
 
     }
 }
