@@ -43,7 +43,7 @@
     "mysql": "^2.17.1",
     "path-prefix-proxy": "^1.1.0",
     "rxjs": "^6.5.2",
-    "socket.io": "^2.2.0",
+    "socket.io": "^2.5.0",
     "sql-escape": "^1.0.1"
   }
 }
