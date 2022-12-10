@@ -36,7 +36,7 @@
     "axios-observable": "^1.1.1",
     "body-parser": "^1.19.0",
     "dhis2-uid": "^0.1.2",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "i": "^0.3.6",
     "jdbc": "^0.6.3",
     "moment": "^2.24.0",
